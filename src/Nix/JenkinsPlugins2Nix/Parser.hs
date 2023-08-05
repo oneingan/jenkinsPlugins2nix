@@ -59,9 +59,9 @@ parseManifest = do
         hudson_version' <- optional $ getKey "Hudson-Version"
         jenkins_version' <- optional $ getKey "Jenkins-Version"
         plugin_dependencies' <- either (\_ -> Right Set.empty) return $
-          getKeyParsing "Plugin-Dependencies" parsePluginDependencies
+          getKeyParsing "Plugin-Dependancies" parsePluginDependencies
         plugin_developers' <- either (\_ -> Right Set.empty) return $
-          getKeyParsing "Plugin-Developers" parsePluginDevelopers
+          getKeyParsing "Plugin-Developars" parsePluginDevelopers
         return $! Manifest
           { manifest_version = manifest_version'
           , archiver_version = archiver_version'
