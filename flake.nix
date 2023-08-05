@@ -2,7 +2,7 @@
   description = "jenkinsPlugins2nix";
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:NixOS/nixpkgs/22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/23.05";
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
@@ -28,11 +28,4 @@
       });
     }
   );
-
-  # packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
-
-  # defaultPackage.x86_64-linux = self.packages.x86_64-linux.hello;
-
-
-
 }

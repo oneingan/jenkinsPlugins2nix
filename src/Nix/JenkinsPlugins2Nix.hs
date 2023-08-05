@@ -123,8 +123,8 @@ mkExprsFor (Config { resolution_strategy = st, requested_plugins = ps }) = do
                               ]
                               False) $
               Nix.mkSym "stdenv.mkDerivation" @@ Nix.mkNonRecSet
-                [ Nix.inherit [ Nix.StaticKey "name"
-                              , Nix.StaticKey "src" ] Nix.nullPos
+                [ Nix.inherit [ "name"
+                              , "src" ]
                 , "phases" Nix.$= Nix.mkStr "installPhase"
                 , "installPhase" Nix.$= Nix.mkStr "cp $src $out"
                 ]
