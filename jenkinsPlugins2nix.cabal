@@ -40,7 +40,7 @@ executable jenkinsPlugins2nix
   build-depends:       base
                      , bimap                       >=0.3  && <0.6
                      , jenkinsPlugins2nix
-                     , optparse-applicative        >=0.14 && <0.19
+                     , optparse-applicative        >=0.14 && <0.16
                      , prettyprinter-ansi-terminal >=1.1  && <1.2
                      , text
   default-language:    Haskell2010
