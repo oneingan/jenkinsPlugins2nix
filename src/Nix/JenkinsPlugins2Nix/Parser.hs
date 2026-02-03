@@ -14,10 +14,8 @@ module Nix.JenkinsPlugins2Nix.Parser
 import           Control.Applicative
 import           Control.Monad (void)
 import qualified Data.Attoparsec.Text as A
-import           Data.Either (either)
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import           Data.Monoid ((<>))
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Text (Text)

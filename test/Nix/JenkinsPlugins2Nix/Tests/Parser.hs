@@ -12,7 +12,6 @@ import qualified Data.Text as Text
 import           Nix.JenkinsPlugins2Nix.Parser (runParseManifest)
 import           Nix.JenkinsPlugins2Nix.Types
 import qualified Test.Hspec as Hspec
-import qualified Test.Tasty.Hspec as Hspec
 
 spec :: Hspec.Spec
 spec = Hspec.describe "parser spec" $ do

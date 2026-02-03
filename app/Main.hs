@@ -10,9 +10,8 @@ module Main (main) where
 
 import qualified Data.Bimap                                as Bimap
 import           Data.List                                 (intersperse)
-import           Data.Monoid                               (mconcat, (<>))
 import qualified Data.Text                                 as Text
-import           Data.Text.Prettyprint.Doc.Render.Terminal (putDoc)
+import qualified Prettyprinter.Render.Terminal             as Pretty
 import           Nix.JenkinsPlugins2Nix
 import           Nix.JenkinsPlugins2Nix.Types
 import qualified Options.Applicative                       as Opt
@@ -28,7 +27,7 @@ main = do
       hPutStrLn stderr err
       exitFailure
     Right p -> do
-      putDoc p
+      Pretty.putDoc p
       exitSuccess
   where
     opts = Opt.info (parseConfig Opt.<**> Opt.helper)
@@ -43,7 +42,7 @@ parseConfig = Config
      <> Opt.short 'r'
      <> Opt.help "Dependency resolution"
      <> Opt.showDefaultWith (resolutions Bimap.!)
-     <> Opt.metavar (printf "[%s]" . mconcat . intersperse "|" $ Bimap.keysR resolutions)
+     <> Opt.metavar (printf "[%s]" . concat . intersperse "|" $ Bimap.keysR resolutions)
      <> Opt.value Latest )
   <*> Opt.some (Opt.option requestedPluginReader
                 ( Opt.metavar "PLUGIN_NAME{:PLUGIN_VERSION}"
