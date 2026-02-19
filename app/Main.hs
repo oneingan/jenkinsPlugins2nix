@@ -10,9 +10,8 @@ module Main (main) where
 
 import qualified Data.Bimap                                as Bimap
 import           Data.List                                 (intersperse)
-import           Data.Monoid                               (mconcat, (<>))
 import qualified Data.Text                                 as Text
-import           Data.Text.Prettyprint.Doc.Render.Terminal (putDoc)
+import qualified Prettyprinter.Render.Terminal             as Pretty
 import           Nix.JenkinsPlugins2Nix
 import           Nix.JenkinsPlugins2Nix.Types
 import qualified Options.Applicative                       as Opt
@@ -28,7 +27,7 @@ main = do
       hPutStrLn stderr err
       exitFailure
     Right p -> do
-      putDoc p
+      Pretty.putDoc p
       exitSuccess
   where
     opts = Opt.info (parseConfig Opt.<**> Opt.helper)
@@ -43,7 +42,7 @@ parseConfig = Config
      <> Opt.short 'r'
      <> Opt.help "Dependency resolution"
      <> Opt.showDefaultWith (resolutions Bimap.!)
-     <> Opt.metavar (printf "[%s]" . mconcat . intersperse "|" $ Bimap.keysR resolutions)
+     <> Opt.metavar (printf "[%s]" . concat . intersperse "|" $ Bimap.keysR resolutions)
      <> Opt.value Latest )
   <*> Opt.some (Opt.option requestedPluginReader
                 ( Opt.metavar "PLUGIN_NAME{:PLUGIN_VERSION}"
@@ -51,15 +50,22 @@ parseConfig = Config
                <> Opt.short 'p'
                <> Opt.help "Plugins we should generate nix for. Latest version is used if not specified." )
                )
+  <*> Opt.flag Optional Mandatory
+      ( Opt.long "skip-optional"
+        <> Opt.help "skip optional dependencies" )
   where
     resolutions :: Bimap.Bimap ResolutionStrategy String
-    resolutions = Bimap.fromList [(AsGiven, "as-given"), (Latest, "latest")]
+    resolutions = Bimap.fromList [(AsGiven, "as-given"), (Latest, "latest"), (JenkinsVersion(""), "jenkins")]
 
     resolutionReader :: Opt.ReadM ResolutionStrategy
-    resolutionReader = Opt.eitherReader $ \s -> case Bimap.lookupR s resolutions of
-      Nothing -> Left $ "Invalid dependency resolution, needs to be one of "
-                     <> show (Bimap.keysR resolutions)
-      Just v -> Right v
+    resolutionReader = let
+        strat = \s -> (Text.unpack (head (Text.splitOn ":" (Text.pack s))))
+        version = \s -> (Text.unpack(last (Text.splitOn ":" (Text.pack s))))
+      in Opt.eitherReader $ \s -> case Bimap.lookupR (strat s) resolutions of
+        Nothing -> Left $ "Invalid dependency resolution, needs to be one of "
+                       <> show (Bimap.keysR resolutions)
+        Just (JenkinsVersion("")) -> Right (JenkinsVersion(version s))
+        Just v -> Right v
 
     requestedPluginReader :: Opt.ReadM RequestedPlugin
     requestedPluginReader = Opt.maybeReader $ \p -> Just $! case break (== ':') p of

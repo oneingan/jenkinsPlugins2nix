@@ -27,6 +27,7 @@ data ResolutionStrategy =
   AsGiven
   -- | Always pick latest version of the dependency we're told about.
   | Latest
+  | JenkinsVersion(String)
   deriving (Show, Eq, Ord)
 
 -- | Program configuration
@@ -35,6 +36,8 @@ data Config = Config
     resolution_strategy :: !ResolutionStrategy
     -- | User-required plugins.
   , requested_plugins :: ![RequestedPlugin]
+    -- | Plugin resolution
+  , plugin_resolution :: !PluginResolution
   } deriving (Show, Eq, Ord)
 
 -- | Plugin that user requested on the command line.

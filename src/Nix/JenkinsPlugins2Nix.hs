@@ -15,12 +15,12 @@ import qualified Crypto.Hash                   as Hash
 import qualified Data.ByteString.Lazy          as BSL
 import           Data.Map.Strict               (Map)
 import qualified Data.Map.Strict               as Map
-import           Data.Monoid                   ((<>))
+import qualified Data.Set                      as Set
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.Text.Encoding            as Text
 import qualified Data.Text.IO                  as Text
-import           Data.Text.Prettyprint.Doc     (Doc)
+import           Prettyprinter                 (Doc)
 import qualified Network.HTTP.Simple           as HTTP
 import qualified Nix.Expr                      as Nix
 import           Nix.Expr.Shorthands           ((@@))
@@ -70,11 +70,12 @@ downloadPlugin p = do
 -- | Download the given plugin as well as recursively download its dependencies.
 downloadPluginsRecursive
   :: ResolutionStrategy -- ^ Decide what version of dependencies to pick.
+  -> PluginResolution -- ^ Wheter to include or skip optional dependencies
   -> Map Text RequestedPlugin -- ^ Plugins user requested.
   -> Map Text Plugin -- ^ Already downloaded plugins.
   -> RequestedPlugin -- ^ Plugin we're going to download.
   -> MTL.ExceptT String IO (Map Text Plugin)
-downloadPluginsRecursive strategy uPs m p = if Map.member (requested_name p) m
+downloadPluginsRecursive strategy presolution uPs m p = if Map.member (requested_name p) m
   then return m
   else do
         -- Adjust the requested plugin based on whether it was
@@ -90,26 +91,29 @@ downloadPluginsRecursive strategy uPs m p = if Map.member (requested_name p) m
             -- It's not a user-specified plugin and we want the latest
             -- version per strategy so download the latest one.
             Latest  -> p { requested_version = Nothing }
+            -- Use a specific Jenkins version supplied by the strategy.
+            JenkinsVersion v -> p { requested_version = Just (Text.pack v) }
           -- The user has asked for this plugin explicitly so use
           -- their possibly-versioned request rather than picking
           -- based on versions listed in manifest dependencies.
           Just userPlugin -> userPlugin
     plugin <- MTL.ExceptT $ downloadPlugin adjustedPlugin
-    foldM (\m' p' -> downloadPluginsRecursive strategy uPs m' $
+    foldM (\m' p' -> downloadPluginsRecursive strategy presolution uPs m' $
               RequestedPlugin { requested_name = plugin_dependency_name p'
                               , requested_version = Just $! plugin_dependency_version p'
                               })
       (Map.insert (requested_name p) plugin m)
-      (plugin_dependencies $ manifest plugin)
+      (Set.filter (\dep -> plugin_dependency_resolution dep <= presolution)
+       (plugin_dependencies $ manifest plugin))
 
 -- | Pretty-print nix expression for all the given plugins and their
 -- dependencies that the user asked for.
 mkExprsFor :: Config
            -> IO (Either String (Doc ann))
-mkExprsFor (Config { resolution_strategy = st, requested_plugins = ps }) = do
+mkExprsFor (Config { resolution_strategy = st, requested_plugins = ps, plugin_resolution = pr }) = do
   eplugins <- MTL.runExceptT $ do
     let userPlugins = Map.fromList $ map (requested_name &&& id) ps
-    plugins <- foldM (downloadPluginsRecursive st userPlugins) Map.empty ps
+    plugins <- foldM (downloadPluginsRecursive st pr userPlugins) Map.empty ps
     return $ Map.elems plugins
   return $! case eplugins of
     Left err -> Left err
@@ -123,8 +127,8 @@ mkExprsFor (Config { resolution_strategy = st, requested_plugins = ps }) = do
                               ]
                               False) $
               Nix.mkSym "stdenv.mkDerivation" @@ Nix.mkNonRecSet
-                [ Nix.inherit [ Nix.StaticKey "name"
-                              , Nix.StaticKey "src" ] Nix.nullPos
+                [ Nix.inherit [ "name"
+                              , "src" ]
                 , "phases" Nix.$= Nix.mkStr "installPhase"
                 , "installPhase" Nix.$= Nix.mkStr "cp $src $out"
                 ]

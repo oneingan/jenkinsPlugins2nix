@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   build:
     name: ghc ${{ matrix.ghc }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         ghc: ["8.6.5", "8.8.4", "8.10.5", "9.0.1"]
@@ -11,18 +11,18 @@ jobs:
     env:
       CONFIG: "--enable-tests --enable-benchmarks"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: Install system dependencies
         run: sudo apt-get install -y libsodium-dev
       - name: Setup Haskell
         id: setup-haskell-cabal
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: ${{ matrix.cabal }}
       - run: cabal v2-update
       - run: cabal v2-freeze $CONFIG
-      - uses: actions/cache@v2
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cabal/store
