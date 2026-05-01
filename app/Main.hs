@@ -44,12 +44,15 @@ parseConfig = Config
      <> Opt.showDefaultWith (resolutions Bimap.!)
      <> Opt.metavar (printf "[%s]" . concat . intersperse "|" $ Bimap.keysR resolutions)
      <> Opt.value Latest )
+  <*> Opt.switch
+      ( Opt.long "no-deps"
+     <> Opt.help "Do not download or include transitive dependencies; only generate nix for explicitly requested --plugin entries." )
   <*> Opt.some (Opt.option requestedPluginReader
-                ( Opt.metavar "PLUGIN_NAME{:PLUGIN_VERSION}"
-               <> Opt.long "plugin"
-               <> Opt.short 'p'
-               <> Opt.help "Plugins we should generate nix for. Latest version is used if not specified." )
-               )
+                 ( Opt.metavar "PLUGIN_NAME{:PLUGIN_VERSION}"
+                <> Opt.long "plugin"
+                <> Opt.short 'p'
+                <> Opt.help "Plugins we should generate nix for. Latest version is used if not specified." )
+                )
   <*> Opt.flag Optional Mandatory
       ( Opt.long "skip-optional"
         <> Opt.help "skip optional dependencies" )
