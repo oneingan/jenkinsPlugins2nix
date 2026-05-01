@@ -58,14 +58,27 @@ parseConfig = Config
     resolutions = Bimap.fromList [(AsGiven, "as-given"), (Latest, "latest"), (JenkinsVersion(""), "jenkins")]
 
     resolutionReader :: Opt.ReadM ResolutionStrategy
-    resolutionReader = let
-        strat = \s -> (Text.unpack (head (Text.splitOn ":" (Text.pack s))))
-        version = \s -> (Text.unpack(last (Text.splitOn ":" (Text.pack s))))
-      in Opt.eitherReader $ \s -> case Bimap.lookupR (strat s) resolutions of
-        Nothing -> Left $ "Invalid dependency resolution, needs to be one of "
-                       <> show (Bimap.keysR resolutions)
-        Just (JenkinsVersion("")) -> Right (JenkinsVersion(version s))
-        Just v -> Right v
+    resolutionReader =
+      let
+        splitOnce :: String -> (String, Maybe String)
+        splitOnce s =
+          let (k, rest) = Text.breakOn ":" (Text.pack s)
+          in if Text.null rest
+             then (Text.unpack k, Nothing)
+             else (Text.unpack k, Just (Text.unpack (Text.drop 1 rest)))
+
+      in Opt.eitherReader $ \s ->
+        let (k, mv) = splitOnce s
+        in case Bimap.lookupR k resolutions of
+             Nothing -> Left $
+               "Invalid dependency resolution, needs to be one of "
+               <> show (Bimap.keysR resolutions)
+             Just (JenkinsVersion "") ->
+               case mv of
+                 Nothing -> Left "Invalid dependency resolution: jenkins strategy needs a version (jenkins:<VERSION>)"
+                 Just "" -> Left "Invalid dependency resolution: jenkins strategy needs a version (jenkins:<VERSION>)"
+                 Just v -> Right (JenkinsVersion v)
+             Just v -> Right v
 
     requestedPluginReader :: Opt.ReadM RequestedPlugin
     requestedPluginReader = Opt.maybeReader $ \p -> Just $! case break (== ':') p of
