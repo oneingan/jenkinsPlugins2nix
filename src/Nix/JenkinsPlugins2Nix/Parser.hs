@@ -26,7 +26,7 @@ import           Nix.JenkinsPlugins2Nix.Types
 runParseManifest :: Text -> Either String Manifest
 runParseManifest = A.parseOnly parseManifest
 
--- | 'Manifest' parser.
+-- | Manifest parser.
 parseManifest :: A.Parser Manifest
 parseManifest = do
   kvs <- kvMap
